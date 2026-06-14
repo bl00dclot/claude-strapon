@@ -30,14 +30,15 @@ python3 -m json.tool ~/.claude/settings.json >/dev/null && echo "✓ current set
 export PATH="$HOME/.local/bin:$PATH"
 rtk init -g          # answer y to patch settings.json
 ```
-This writes `~/.claude/hooks/rtk-rewrite.sh`, creates `~/.claude/RTK.md`, adds `@RTK.md`
-to `~/.claude/CLAUDE.md`, and patches `~/.claude/settings.json` (PreToolUse/Bash hook) with
-a `.bak` backup.
+In RTK v0.42.4 this registers the PreToolUse(Bash) hook as the **native binary command
+`rtk hook claude`** directly in `~/.claude/settings.json` (NOT a `~/.claude/hooks/*.sh`
+script — that path is obsolete), creates `~/.claude/RTK.md`, and adds `@RTK.md` to
+`~/.claude/CLAUDE.md`.
 
-Verify:
+Verify (the file-test for rtk-rewrite.sh is OBSOLETE — it always reports MISSING on v0.42.4):
 ```bash
-rtk init --show
-test -f ~/.claude/hooks/rtk-rewrite.sh && echo "hook script: present" || echo "hook script: MISSING"
+rtk init --show     # the real check — every line should read [ok]
+grep -q '"rtk hook claude"' ~/.claude/settings.json && echo "rtk hook: present" || echo "rtk hook: MISSING"
 python3 -m json.tool ~/.claude/settings.json >/dev/null && echo "✓ valid" || echo "✗ INVALID — restore backup"
 ```
 
