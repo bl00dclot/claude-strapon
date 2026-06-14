@@ -63,6 +63,21 @@ codegraph install         # registers MCP into Claude Code; answer yes to auto-a
 grep -n -i "code.\?graph" ~/.claude/CLAUDE.md 2>/dev/null || echo "not in CLAUDE.md (ok if MCP-registered)"
 ```
 
+⚠ CRITICAL nvm trap (CONFIRMED on this box 2026-06-15): `codegraph install` writes
+`"command": "codegraph"` (bare) into ~/.claude.json. Because BOTH codegraph and node are
+nvm-managed, Claude Code can't find them when it spawns the MCP server (it does not load
+nvm) → `/mcp` shows "Failed to reconnect to codegraph: ENOENT". Fix: re-register with
+ABSOLUTE node + shim paths (zero PATH dependence), then RESTART Claude Code:
+
+```bash
+claude mcp remove codegraph -s user
+claude mcp add codegraph -s user -- \
+  $HOME/.config/nvm/versions/node/v22.22.3/bin/node \
+  $HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@colbymchenry/codegraph/npm-shim.js \
+  serve --mcp
+```
+If you change Node versions, re-find the paths: `ls ~/.config/nvm/versions/node/*/bin/codegraph`
+
 THE ONLY real confirmation (config presence ≠ working — issue #172):
 ```
 Start a Claude Code session in a repo, run /mcp, confirm codegraph shows GREEN/connected.
