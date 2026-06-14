@@ -22,8 +22,11 @@ modifying its own guardrails. So everything that writes into `~/.claude/` was de
 - ⚠ Spec wanted Node 22.x; box had 24.13.1 → switched to 22 via nvm per user choice
 - ⚠ No `Backend: native/wasm` line exists in v1.0.1 status/help — that check is N/A here
 - ⚠ `codegraph` only on PATH when nvm has 22 active
-- ⏳ MCP registration: NOT done (runbook §2 — `codegraph install`)
-- ⏳ MANUAL confirm: /mcp shows codegraph GREEN inside a session (config ≠ connection, #172)
+- ✅ MCP registration: FIXED 2026-06-15 — `codegraph install` wrote bare `command:"codegraph"`,
+  which failed under nvm (ENOENT). Re-registered via `claude mcp` with absolute node+shim paths.
+  Verified: `claude mcp get` → ✔ Connected; direct MCP `initialize` returned serverInfo 1.0.1.
+- ⚠ Running sessions show stale ENOENT until /mcp reconnect or Claude Code restart
+- ⚠ Green but exposes NO tools until `codegraph init` creates `.codegraph/` in a repo (per-project)
 - Per-repo: `codegraph init` (user runs inside each repo)
 
 ## Model switching (native — no CCR)
