@@ -133,7 +133,9 @@ Omit any section that has no content.
 
 | Condition | Behavior |
 |-----------|----------|
-| No git repo / no GitHub remote / `gh` not authed | Stop at preflight, explain, do not proceed. |
+| Not inside a git repo (`git rev-parse` fails) | Stop at preflight; name this cause; do not proceed. |
+| No GitHub remote resolves (`gh repo view` fails) | Stop at preflight; name this cause; do not proceed. |
+| `gh` not authenticated (`gh auth status` fails) | Stop at preflight; name this cause; do not proceed. |
 | Repo has Issues disabled (`hasIssuesEnabled` false) | Stop at preflight, explain; do not draft. |
 | Strong duplicate found | Stop, link the existing issue, do not file. |
 | Label does not exist in repo | Skip it, note which were skipped. Never create. |
