@@ -1,7 +1,12 @@
-# Subagent roster — derived 2026-08-24
+# Subagent roster — derived 2026-08-24, re-derived 2026-08-25
 
 Derived with the `derive-agent-roles` skill from this repo's artifacts, gates, and
 failure log. Re-run the derivation when the failure classes in `git log` change.
+
+The 2026-08-25 pass ran against 14 new commits, ten of them fixes. It added one role and
+widened one; the eleven kills from the first pass all stand. The structural change that
+justified the new role: at the first derivation this repo configured one machine, and
+six files now shell out over ssh to a second.
 
 ## Install
 
@@ -11,7 +16,7 @@ so these are staged here the same way `setup/skills/` is. A human installs them:
 ```sh
 install -d ~/.claude/agents          # or .claude/agents for repo scope
 install -m0644 setup/agents/evidence-auditor.md setup/agents/runbook-author.md \
-  ~/.claude/agents/
+  setup/agents/ssh-hazard-table.md ~/.claude/agents/
 ```
 
 The hook is `scripts/agent-taskcompleted.sh`. Wiring it needs an edit to
@@ -32,12 +37,18 @@ It shells out to `shellcheck`, which is not installed on this box yet
 
 | Role | Tools | Model | Output artifact | Derived from |
 |---|---|---|---|---|
-| `evidence-auditor` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | per-claim PROVEN / DISPROVEN / UNPROVEN table with commands and output | failure class F1 |
+| `evidence-auditor` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | per-claim PROVEN / DISPROVEN / UNPROVEN table with commands and output | failure classes F1, F4 |
 | `runbook-author` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | `docs/<thing>-runbook.md`, steps with verify + revert | Tier 3 rule in `CLAUDE.md` and `docs/tiers.md` |
+| `ssh-hazard-table` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | per-invocation table: remote tool present? stdin free? survives peer death? fresh connection? | failure class F5 |
 
 `evidence-auditor` is adversarial toward the lead's own `state/` and `docs/` edits.
 `runbook-author` has no mutation tools by construction — it is the "writes the steps and
-stops" replacement for anything needing execute authority.
+stops" replacement for anything needing execute authority. `ssh-hazard-table` is
+adversarial toward any script the lead writes that crosses a host boundary.
+
+The three do not overlap by input: `evidence-auditor` audits claims in a diff,
+`ssh-hazard-table` audits invocations in a script, `runbook-author` produces rather than
+checks.
 
 ## Failure classes the roster answers
 
@@ -50,6 +61,17 @@ stops" replacement for anything needing execute authority.
   Answered by the hook, not by a role.
 - **F3 — unrecoverable step before its proof (`d93c07a`).** One commit. Folded into
   `runbook-author`'s output shape rather than given its own role.
+- **F4 — the operation returns 0 and achieves nothing (5 commits, added 2026-08-25).**
+  `0a2c0cd` reload without re-bind, `4b6dd03` udev change event that applies nothing,
+  `d700546` apply silently no-op on rerun, `a9af27b` `network-online.target` active with
+  no address on the interface, `8b2d8ff` the inverse — a false FAIL from an empty
+  variable. Joint-dominant with F1. Widened `evidence-auditor` rather than adding a role:
+  an `effect-prover` would carry the same tools and the same artifact shape.
+- **F5 — remote execution assumption (3 commits, added 2026-08-25).** `7c699a9` rsync
+  assumed present on the box, `21c46e4` heredoc occupying the stdin sudo needed to
+  prompt on, `735bb27` a connection held across the peer's own poweroff. None are
+  reachable by shellcheck, which does not model ssh, tty or stdin semantics. Answered by
+  `ssh-hazard-table`.
 
 ## Kill list
 
@@ -70,3 +92,60 @@ Do not resurrect these without a new failure class to justify them.
 | irreversibility-sequencer | one-off, not a recurring class (F3 is a single commit). Its concern lives in `runbook-author`'s step shape |
 
 Eleven candidates, two survivors.
+
+### Added 2026-08-25
+
+| Candidate | Rule that killed it |
+|---|---|
+| nas-baseline-reporter | deterministic command exists — `scripts/nas-discover.sh` |
+| nas-verifier | deterministic command exists — `scripts/nas-verify.sh` |
+| nas-reconciler | deterministic command exists — `scripts/nas-apply.sh`; also needs Tier 2 authority |
+| effect-prover | same tools **and** same artifact as `evidence-auditor` — MERGE. F4 widened that role instead |
+| idempotence-tester | needs apply authority to run the thing twice. Belongs as a script that runs `apply.sh` twice and diffs, not as an agent |
+| wake-path-validator | deterministic command exists — `scripts/nas-verify.sh` |
+| cross-host-config-coupler | no failure class. The `TimeoutIdleSec=600` ↔ `IDLE_TICKS=3` coupling is documented in both unit files and has never broken — no artifact is the evidence it is not a role |
+| doc-citation-checker | one-off (a single drifted `file:line` reference, fixed in `53a840c`) and mechanical |
+
+Eight candidates, one survivor. Running total: nineteen candidates, three survivors.
+
+---
+
+# Re-derivation — 2026-08-25
+
+Re-run because the failure log changed (eleven new `fix(nas)` commits). **The roster
+did not change.** Three new candidates, three kills.
+
+Step 0 finding worth more than the re-derivation itself: nothing from 2026-08-24 was
+ever installed. No `~/.claude/agents/`, no `TaskCompleted` in any settings file, no
+`shellcheck`. Two roles written, zero in use. `setup/agents/install.sh` now does the
+whole install in one command, since every target is under `~/.claude` and the agent is
+denied there.
+
+## New failure classes
+
+- **F4 — the gate itself returns a wrong verdict.** `8b2d8ff` verify reported a false
+  FAIL against a correctly armed NIC; `d700546` apply was idempotent-broken and blocked
+  its own reruns. Distinct from F1: here a deterministic script, not a human claim, is
+  what lies.
+- **F5 — a mechanism behaves unlike its name at boot or reload.** `a9af27b`
+  network-online.target vacuous so smbd bound loopback-only; `0a2c0cd` smbd reload never
+  re-binds sockets; `4b6dd03` `.link` needs an add event, not a change event;
+  `735bb27` sleep-nas froze the terminal.
+- **F6 — blanket staging sweeps unrelated files.** `7c699a9` fixed exactly this, then
+  `4c38283` swept `state/otel/*` into a NAS commit anyway. A prompt rule did not survive
+  across sessions. Recurrence after a fix is what promotes it to a class.
+
+## Kill list — 2026-08-25
+
+| Candidate | Rule that killed it |
+|---|---|
+| gate-adversary (F4) | cannot produce its artifact within its tool ceiling — exposing a false verdict means inducing the state that triggers it, which is mutation, not Tier 0. The repo's own answer is a test script (`scripts/test-nas-idle.sh` is the precedent), and a deterministic command beats an agent |
+| boot-lifecycle-auditor (F5) | its proof requires a reboot — Tier 2+, and no read-only command substitutes. Residue folds into `evidence-auditor`, whose UNPROVEN verdict is the correct output for a claim nothing can currently measure |
+| commit-scope-checker (F6) | deterministic command exists once written — a script beats an agent. Emitted as `scripts/git-add-scope-guard.sh`, a PreToolUse hook that refuses `git add -A` / `git add .` and names the two commits that justify it |
+
+## Hooks
+
+| Hook | Script | Gate it reuses |
+|---|---|---|
+| `TaskCompleted` | `scripts/agent-taskcompleted.sh` | `shellcheck` + `scripts/verify.sh` |
+| `PreToolUse` (Bash) | `scripts/git-add-scope-guard.sh` | F6; no prior gate existed |
