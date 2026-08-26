@@ -48,7 +48,8 @@ Done. Absolute paths were baked in, so the hooks fire regardless of cwd.
 Roles are global (~/.claude/agents); move them to <repo>/.claude/agents to scope
 them to one repo instead.
 
-Verify: start a new session and check `/agents` lists evidence-auditor,
-runbook-author, ssh-hazard-table and state-author, then try `git add -A` — it
-should be refused.
+Verify: `ls ~/.claude/agents` shows evidence-auditor, runbook-author,
+ssh-hazard-table and state-author. The /agents wizard has been removed, so a
+new session confirms them by using one, not by listing them. Then try
+`git add -A` — it should be refused.
 MSG
