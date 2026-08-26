@@ -1,4 +1,4 @@
-# Subagent roster — derived 2026-08-24, re-derived 2026-08-25
+# Subagent roster — derived 2026-08-24, re-derived 2026-08-25 and 2026-08-26
 
 Derived with the `derive-agent-roles` skill from this repo's artifacts, gates, and
 failure log. Re-run the derivation when the failure classes in `git log` change.
@@ -15,8 +15,7 @@ so these are staged here the same way `setup/skills/` is. A human installs them:
 
 ```sh
 install -d ~/.claude/agents          # or .claude/agents for repo scope
-install -m0644 setup/agents/evidence-auditor.md setup/agents/runbook-author.md \
-  setup/agents/ssh-hazard-table.md ~/.claude/agents/
+setup/agents/install.sh          # copies every *.md here except this README
 ```
 
 The hook is `scripts/agent-taskcompleted.sh`. Wiring it needs an edit to
@@ -40,6 +39,7 @@ It shells out to `shellcheck`, which is not installed on this box yet
 | `evidence-auditor` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | per-claim PROVEN / DISPROVEN / UNPROVEN table with commands and output | failure classes F1, F4 |
 | `runbook-author` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | `docs/<thing>-runbook.md`, steps with verify + revert | Tier 3 rule in `CLAUDE.md` and `docs/tiers.md` |
 | `ssh-hazard-table` | Read, Grep, Glob, Bash (Tier 0 allow list) | sonnet | per-invocation table: remote tool present? stdin free? survives peer death? fresh connection? | failure class F5 |
+| `state-author` | Read, Grep, Glob, Edit, Write, Bash | sonnet | files under `state/`/`scripts/` plus the commit, gate output pasted | resurrected 2026-08-26 — see below |
 
 `evidence-auditor` is adversarial toward the lead's own `state/` and `docs/` edits.
 `runbook-author` has no mutation tools by construction — it is the "writes the steps and
@@ -149,3 +149,95 @@ denied there.
 |---|---|---|
 | `TaskCompleted` | `scripts/agent-taskcompleted.sh` | `shellcheck` + `scripts/verify.sh` |
 | `PreToolUse` (Bash) | `scripts/git-add-scope-guard.sh` | F6; no prior gate existed |
+
+
+---
+
+# Re-derivation — 2026-08-26
+
+Run with the argument "to plan, research and write a sincere plan". Five commits since
+`fbccaa2`. **One kill resurrected, six candidates killed, roster now four.**
+
+## Step 0 — what the last two passes produced, measured
+
+```console
+$ ls ~/.claude/agents/
+ls: cannot access '$HOME/.claude/agents/': No such file or directory
+$ grep -c TaskCompleted .claude/settings.json
+1
+$ grep -n 'PreToolUse|git-add-scope' .claude/settings.json .claude/settings.local.json
+0 matches
+$ command -v shellcheck
+/usr/bin/shellcheck
+```
+
+Fixed since the last pass: `shellcheck` installed, `TaskCompleted` wired (`ac96998`).
+Still inert: all three roles, and `scripts/git-add-scope-guard.sh` — written, widened in
+`871b956` to also refuse `git add <dir>`, and never wired as `PreToolUse`. A guard
+nothing invokes is not a gate.
+
+`install.sh` carried its own instance of the same disease: it named
+`evidence-auditor.md` and `runbook-author.md` literally, so `ssh-hazard-table` — the
+whole product of the 2026-08-25 pass — was staged and could never have been installed
+even by someone who ran the installer. It now discovers role files rather than listing
+them.
+
+## New failure log
+
+| Commit | Class |
+|---|---|
+| `c72c66f` verify's port-22 check reported FAIL on a host with no ssh server | F4 recurrence |
+| `76e478d` the shellcheck gate was green about the wrong files | F4 recurrence |
+| `871b956` the guard refused `-A` and `.` but not `<dir>` | F6 recurrence |
+| `b152195` `tar -C / -x` as root chmod'd `/`, `/etc`, `/usr` to 0775 | F6 in a new medium |
+| `ac96998` wire the hook | install gap, not a failure |
+
+`b152195` was filed as a candidate class of its own — unstated blast radius — and is
+not one. It is `4c38283` (`git add` staging more than named) in a different tool: a
+bulk operation whose target set is wider than the one named. F6 widens; F7 is not born.
+Note the discovery path, which is the durable lesson: a group-writable `/` was found by
+an unrelated tool refusing to trust it, never by anything in this repo's verify path.
+
+## The resurrection
+
+`state-file-author` was killed on 2026-08-24 by *no distinct allow list, artifact, or
+stance against the lead — it is a prompt*. That verdict was correct while the lead did
+all the writing. Three facts have changed it:
+
+- Every surviving role is Tier 0 read-only. `Edit(state/**)` is the only mutation right
+  in `settings.json`'s allow list, so a role that holds it is maximally distinct — no
+  other role can produce its artifact.
+- Its artifact is a reviewable commit, not a verdict. `runbook-author` produces text for
+  a human to run; this produces files the machine will run.
+- It completes the pair the other three exist to be. `evidence-auditor` and
+  `ssh-hazard-table` were both written adversarial toward *the lead's* output; that
+  output now has an author with its own tool ceiling, which is the "split the role that
+  both produces and checks" rule satisfied rather than violated.
+
+Renamed `state-author`, matching `runbook-author`. Its ceiling is the commit:
+`apply.sh` and `nas-apply.sh` are absent from its shape by design, so reconciliation
+stays with the human reading the diff.
+
+## Kill list — 2026-08-26
+
+| Candidate | Rule that killed it |
+|---|---|
+| `plan-author` | MERGE — same tools **and** same artifact as `runbook-author`. A plan whose steps carry verify and revert *is* the runbook shape |
+| `research-scout` | A command already produces the artifact — the `deep-research` workflow, which returned a 21-source verified report on 2026-08-25 |
+| `premise-prover` | MERGE — same tools and artifact as `evidence-auditor`; UNPROVEN is already the verdict for a claim nothing can yet measure |
+| `plan-completeness-critic` | No distinct allow list, and its artifact overlaps `evidence-auditor`'s UNPROVEN column. Evidence is one commit (`d93c07a`) — one-off, not a class |
+| `blast-radius-auditor` | A deterministic command exists once written, and it is already written: `nas-build-runbook.md:406` holds the `find / -xdev -maxdepth 2 -type d -perm -g+w` check, unwired |
+| `install-drift-checker` | Deterministic — an assertion in `verify.sh`, not an agent |
+
+Six candidates, zero survivors. Running total across three passes: **28 candidates,
+4 roles**, one of them resurrected.
+
+## Hooks
+
+No new hook. `state-author`'s gate is the one that already exists: `TaskCompleted` runs
+`shellcheck` over `state/*/usr/local/sbin/`, `state/*/etc/profile.d/` and `scripts/*.sh`,
+then `./scripts/verify.sh`. Those are exactly the paths it writes.
+
+Two gates remain unwired and are not roles: `git-add-scope-guard.sh` as `PreToolUse`
+(the installer does it; nobody has run the installer), and the group-writable-`/` check
+in `verify.sh`.
