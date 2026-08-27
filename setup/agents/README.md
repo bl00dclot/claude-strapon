@@ -241,3 +241,83 @@ then `./scripts/verify.sh`. Those are exactly the paths it writes.
 Two gates remain unwired and are not roles: `git-add-scope-guard.sh` as `PreToolUse`
 (the installer does it; nobody has run the installer), and the group-writable-`/` check
 in `verify.sh`.
+
+---
+
+# Re-derivation — 2026-08-28
+
+Fourth pass, and the first run against `ops` itself. The 2026-08-26 entry closed
+with "No second repo has been derived. `ops` itself was analysed by hand and
+yields three roles, none written." This writes two of them.
+
+Measured against `main` at `f38a802`, clean, 11 ahead of origin. Inputs: 19
+scripts, 5 Tier 2 wrappers, no CI, 15 docs, `.claude/settings.json` with 24
+allow / 7 ask / 13 deny, one wired `TaskCompleted` hook, and **31 fix commits
+of 71 total — a 44% fix rate.**
+
+## New failure classes
+
+**A check reported a result that was not true — 4 commits.** The strongest class
+in the repo and the one no deterministic command covers, because the script that
+would catch it *is* the defect:
+
+- `c72c66f` port-22 probe FAILed against a host legitimately running no sshd
+- `8b2d8ff` false FAIL against a correctly armed NIC
+- `1a98b53` passed while apply had left targets group-writable
+- `76e478d` the shellcheck gate was green while checking the wrong files
+
+`scripts/agent-taskcompleted.sh` ends with `./scripts/verify.sh || exit 2`. The
+gate that decides whether a subagent is finished trusts a script that has been
+wrong three times, and nothing validates the validator.
+
+**An apply that is correct once and destructive twice — 5 commits.**
+`nas-apply.sh` and `nas-apply-remote.sh` carry 13 fix-touches between them, the
+largest cluster here: `d700546`, `b152195` (tar restored umask-002 modes and
+chmod'd `/` to 0775 on rerun), `7c699a9`, `21c46e4`, `1ba4c4f`.
+
+**A wrapped binary answered instead of the real one — 2 instances, 2026-08-27.**
+A `find / -xdev` sweep returned zero rows where `/usr/bin/find` returned one;
+`ls -l` dropped the owner column an ownership audit needed. Both read as
+answers, not errors. This produced no new role — it is an amendment to
+`evidence-auditor`, whose whole value is not being fooled and which held the
+same blind spot.
+
+## Kept
+
+| Role | Artifact | Derived from |
+|---|---|---|
+| `check-auditor` | Per-assertion verdict: can this check report something untrue? | the 4 false-verdict commits, plus the gate's own dependency on `verify.sh` |
+| `idempotence-auditor` | Per-step second-run verdict for mutating scripts | the 5 rerun defects; 13 fix-touches on `nas-apply*.sh` |
+
+`check-auditor` is `opus` and adversarial toward `state-author` **and** toward
+the repo's own TaskCompleted gate — the first role in this roster pointed at a
+gate rather than at a diff.
+
+## Kill list — 2026-08-28
+
+| Candidate | Rule |
+|---|---|
+| `discover-agent`, `plan-agent`, `verify-runner` | deterministic producer — `discover.sh`, `plan.sh`, `verify.sh` |
+| `shellcheck-agent`, `test-runner` | existing gate — `agent-taskcompleted.sh` runs shellcheck over `scripts/*.sh` and `state/`; `test-teleport.sh`, `test-nas-idle.sh` exist |
+| `state-author`, `runbook-author`, `ssh-hazard-table`, `evidence-auditor` | duplicate — already in this roster |
+| `tier2-wrapper-author`, `settings-editor` | guardrail write — `deny Edit(bin/**)`, `Edit(//usr/local/sbin/claude-*)`, `Edit(.claude/**)` |
+| `transfer-operator` | needs execute authority on a destructive path (`nas-media.sh --reclaim`) |
+| `catalog-builder` | deterministic producer — `docs/ux-plan.md` phase 1 is a script |
+| `convention-auditor` | one-off — n=2 (a missing `flock`, a missing local manifest), both in one session by one author; folds into `check-auditor` |
+| `doc-drift` | no failure class — no commit in 71 fixes a stale doc |
+| `reviewer` | no distinct allowlist, artifact or stance |
+
+## Hooks
+
+None added. `TaskCompleted` → `scripts/agent-taskcompleted.sh` already runs
+shellcheck plus `verify.sh` and is already wired in `settings.json`. Adding a
+second gate in front of a working one is the theatre step 5 exists to kill —
+and `check-auditor` exists precisely because that gate is not always working.
+
+## Known ceiling
+
+Same as every prior pass, undischarged: **these roles have never run.** Their
+output contracts are unproven against a real diff. The cheapest test for
+`check-auditor` is `c72c66f` — check out its parent, point the role at
+`scripts/verify.sh`, and see whether it finds the port-22 probe that FAILs on a
+host with no sshd. One known-bad input, one known-good answer.

@@ -35,6 +35,14 @@ timer, read `systemctl list-timers`; for a mount, read `findmnt`. Where the post
 only exists after a reboot, say so and mark it UNPROVEN rather than accepting the
 running state as proof.
 
+**The measuring command is itself a claim.** This shell replaces `find`, `grep` and `ls`
+with functions that re-execute another binary. On 2026-08-27 a `find / -xdev` sweep run
+through the wrapper returned **zero rows** where `/usr/bin/find` returned one, and
+`ls -l` silently omitted the owner column an ownership audit depended on. Both failures
+read as reassuring answers rather than as errors. Call absolute paths — `/usr/bin/find`,
+`/bin/grep` — and treat any count, any ownership, and any "none found" you did not
+obtain that way as UNPROVEN. A zero that came from a wrapper is not a measured zero.
+
 Your final message is the deliverable. It consists of, in order:
 
 1. Header — the output of `hostname; pwd; date -u`, and the diff or file range audited.
