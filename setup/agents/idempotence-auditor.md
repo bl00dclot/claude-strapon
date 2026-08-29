@@ -1,6 +1,6 @@
 ---
 name: idempotence-auditor
-description: Delegate before committing a change to a script that mutates this machine or the storage box — scripts/apply.sh, scripts/nas-apply.sh, scripts/nas-apply-remote.sh, scripts/otel-apply.sh, scripts/install.sh, setup/agents/install.sh. Returns one row per mutating step stating what a second run does.
+description: Delegate before committing a change to a script that mutates this machine or the storage box — scripts/apply.sh, scripts/nas-apply.sh, scripts/lib/nas-apply-remote.sh, scripts/otel-apply.sh, scripts/install.sh, setup/agents/install.sh. Returns one row per mutating step stating what a second run does.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---

@@ -139,7 +139,7 @@ denied there.
 
 | Candidate | Rule that killed it |
 |---|---|
-| gate-adversary (F4) | cannot produce its artifact within its tool ceiling — exposing a false verdict means inducing the state that triggers it, which is mutation, not Tier 0. The repo's own answer is a test script (`scripts/test-nas-idle.sh` is the precedent), and a deterministic command beats an agent |
+| gate-adversary (F4) | cannot produce its artifact within its tool ceiling — exposing a false verdict means inducing the state that triggers it, which is mutation, not Tier 0. The repo's own answer is a test script (`scripts/tests/test-nas-idle.sh` is the precedent), and a deterministic command beats an agent |
 | boot-lifecycle-auditor (F5) | its proof requires a reboot — Tier 2+, and no read-only command substitutes. Residue folds into `evidence-auditor`, whose UNPROVEN verdict is the correct output for a claim nothing can currently measure |
 | commit-scope-checker (F6) | deterministic command exists once written — a script beats an agent. Emitted as `scripts/git-add-scope-guard.sh`, a PreToolUse hook that refuses `git add -A` / `git add .` and names the two commits that justify it |
 
