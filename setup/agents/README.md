@@ -301,7 +301,7 @@ gate rather than at a diff.
 | `shellcheck-agent`, `test-runner` | existing gate — `agent-taskcompleted.sh` runs shellcheck over `scripts/*.sh` and `state/`; `test-teleport.sh`, `test-nas-idle.sh` exist |
 | `state-author`, `runbook-author`, `ssh-hazard-table`, `evidence-auditor` | duplicate — already in this roster |
 | `tier2-wrapper-author`, `settings-editor` | guardrail write — `deny Edit(bin/**)`, `Edit(//usr/local/sbin/claude-*)`, `Edit(.claude/**)` |
-| `transfer-operator` | needs execute authority on a destructive path (`nas-media.sh --reclaim`) |
+| `transfer-operator` | needs execute authority on a destructive path (`nas mv`, which deletes the source after verifying) |
 | `catalog-builder` | deterministic producer — `docs/ux-plan.md` phase 1 is a script |
 | `convention-auditor` | one-off — n=2 (a missing `flock`, a missing local manifest), both in one session by one author; folds into `check-auditor` |
 | `doc-drift` | no failure class — no commit in 71 fixes a stale doc |
