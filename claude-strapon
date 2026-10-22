@@ -86,12 +86,13 @@ scan
 board "scan"
 
 # Fix candidates: anything not ok and not a human-only step, plus --redo.
+# Optional components start unticked unless --only named them.
 CAND=() PRE=()
 for n in "${NAMES[@]}"; do
   case ${STATE[$n]} in ok|needs) [[ ",$REDO," == *",$n,"* ]] || continue ;; esac
   CAND+=("$n")
   v="$(fn "$n")_optional"
-  [ "${!v:-0}" = 1 ] || PRE+=("$n")
+  [ "${!v:-0}" = 1 ] && [ -z "$ONLY" ] || PRE+=("$n")
 done
 if [ ${#CAND[@]} -eq 0 ]; then printf '\nNothing to fix.\n'; exit 0; fi
 
