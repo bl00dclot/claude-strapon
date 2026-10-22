@@ -10,6 +10,8 @@
 # first: a live session rewrites .claude.json and will race the MCP copy.
 # The agent cannot run --apply itself (targets sit under ~/.claude*). Run it yourself.
 set -euo pipefail
+# .claude.json holds account state (0600); backup and tmp copies must not widen that.
+umask 077
 
 APPLY=0
 [ "${1:-}" = "--apply" ] && APPLY=1
@@ -47,7 +49,7 @@ if [ -z "$missing" ]; then
 else
   echo "  missing: $(echo "$missing" | tr '\n' ' ')"
   if [ "$APPLY" = 1 ]; then
-    cp "$DSTJSON" "$DSTJSON.bak-$(date +%Y%m%d-%H%M%S)"
+    cp -p "$DSTJSON" "$DSTJSON.bak-$(date +%Y%m%d-%H%M%S)"
     jq --slurpfile s "$SRCJSON" '.mcpServers = ((.mcpServers // {}) + $s[0].mcpServers)' \
       "$DSTJSON" > "$DSTJSON.tmp" && mv "$DSTJSON.tmp" "$DSTJSON"
     echo "  copied"
