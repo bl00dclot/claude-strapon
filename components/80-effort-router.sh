@@ -8,7 +8,7 @@ effort_router_cmds() { settings_get '[.hooks.UserPromptSubmit[]?.hooks[]?.comman
 effort_router_detect() {
   local cmds; cmds=$(effort_router_cmds)
   if [ "$cmds" = "$EFFORT_ROUTER" ]; then echo "ok	hook -> $EFFORT_ROUTER"
-  elif [ -n "$cmds" ]; then echo "partial	hook points elsewhere: $(echo "$cmds" | tr '\n' ' ')"
+  elif [ -n "$cmds" ]; then echo "partial	hook points elsewhere: $(paste -sd' ' <<<"$cmds")"
   else echo "missing	no UserPromptSubmit hook"; fi
 }
 effort_router_plan() {

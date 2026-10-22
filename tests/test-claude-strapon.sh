@@ -52,6 +52,7 @@ grep -q 'Dry run: nothing changed' <<<"$out" || fail "dry run did not stop: $out
 grep -q 'remove: stripe' <<<"$out" || fail "board missed stripe removal"
 grep -q 'MCP missing: dune' <<<"$out" || fail "board missed claude2 MCP gap"
 grep -q 'hook points elsewhere' <<<"$out" || fail "board missed stale effort-router"
+grep -q "install files/agents/state-author.md -> $HOME/.claude/agents/state-author.md" <<<"$out" || fail "agents plan line lost the source path"
 out=$(run) || fail "no-tty run exited non-zero"
 grep -q 'No terminal: stopping after the preview' <<<"$out" || fail "no-tty run did not stop"
 [ -z "$(snap)" ] || fail "read-only runs wrote: $(snap)"
@@ -102,4 +103,11 @@ grep -q 'numbers to toggle' <<<"$out" || fail "plain picker not shown: $out"
 grep -q 'Apply these? \[y/N\]' <<<"$out" || fail "no confirm prompt"
 [ "$(jq -r '.model' "$S")" = 'opus[1m]' ] || fail "interactive apply did not set model"
 echo "ok 6  interactive: pick, confirm, apply under a terminal"
+
+# --- 7. statusline writes the self-resolving form and reads it back as ok --------------
+P=$HOME/.claude/plugins/cache/caveman/caveman/abc123/src/hooks
+mkdir -p "$P" && : > "$P/caveman-statusline.sh"
+out=$(run --yes --only statusline) || fail "statusline apply failed: $out"
+grep -q 'caveman badge (follows plugin updates)' <<<"$out" || fail "statusline not ok after apply: $out"
+echo "ok 7  statusline follows plugin updates"
 echo "PASS"

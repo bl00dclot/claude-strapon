@@ -20,7 +20,7 @@ claude2_detect() {
     echo "broken	not links, move aside by hand: ${conflict[*]}"; return
   fi
   [ -f "$CLAUDE2_DIR/.claude.json" ] || { echo "needs	log in once: CLAUDE_CONFIG_DIR=$CLAUDE2_DIR claude"; return; }
-  local miss; miss=$(claude2_missing_mcp | tr '\n' ' ')
+  local miss; miss=$(claude2_missing_mcp | paste -sd' ')
   if [ $ok -lt ${#CLAUDE2_LINKS[@]} ]; then echo "partial	$ok/${#CLAUDE2_LINKS[@]} links${miss:+ · MCP missing: $miss}"
   elif [ -n "$miss" ]; then echo "partial	links ok · MCP missing: $miss"
   else echo "ok	${#CLAUDE2_LINKS[@]}/${#CLAUDE2_LINKS[@]} links · MCP in sync"; fi
@@ -31,7 +31,7 @@ claude2_plan() {
   for f in "${CLAUDE2_LINKS[@]}"; do
     [ -e "$CLAUDE2_DIR/$f" ] || [ -L "$CLAUDE2_DIR/$f" ] || echo "ln -s $CLAUDE_DIR/$f $CLAUDE2_DIR/$f"
   done
-  local miss; miss=$(claude2_missing_mcp | tr '\n' ' ')
+  local miss; miss=$(claude2_missing_mcp | paste -sd' ')
   [ -z "$miss" ] || echo "copy MCP servers into $CLAUDE2_DIR/.claude.json: $miss"
   [ -f "$CLAUDE2_DIR/.claude.json" ] || echo "then by hand: CLAUDE_CONFIG_DIR=$CLAUDE2_DIR claude   (log in), re-run"
 }
