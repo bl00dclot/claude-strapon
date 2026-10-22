@@ -1,5 +1,5 @@
 [Unit]
-Description=caveman-proxy: Claude API route on 127.0.0.1:8787 (claude-setup)
+Description=caveman-proxy: Claude API route on 127.0.0.1:8787 (claude-strapon)
 # Every claude session routes through this port; never give up restarting it.
 StartLimitIntervalSec=0
 

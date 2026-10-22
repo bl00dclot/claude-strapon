@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# claude-setup — measure the Claude Code stack on this machine, then fix what is not there.
+# claude-strapon — measure the Claude Code stack on this machine, then fix what is not there.
 #
 #   scan -> board -> pick -> preview -> apply -> rescan
 #
@@ -18,7 +18,7 @@ ROOT=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 
 usage() {
   cat <<EOF
-usage: claude-setup [--dry-run] [--yes] [--only a,b] [--redo a,b]
+usage: claude-strapon [--dry-run] [--yes] [--only a,b] [--redo a,b]
 
   (no flags)   scan, show the board, pick fixes, preview, confirm, apply, rescan
   --dry-run    stop after the preview; change nothing
@@ -68,7 +68,7 @@ scan() {
 }
 
 board() {
-  ui_head "claude-setup · $(hostname) · $1"
+  ui_head "claude-strapon · $(hostname) · $1"
   local n
   for n in "${NAMES[@]}"; do
     [ "${STATE[$n]}" = needs ] && continue

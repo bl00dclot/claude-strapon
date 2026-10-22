@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs claude-setup against a throwaway HOME with stub claude/rtk/ss/systemctl/npm/curl/sudo,
+# Runs claude-strapon against a throwaway HOME with stub claude/rtk/ss/systemctl/npm/curl/sudo,
 # stdin closed. Nothing here can reach the real ~/.claude, the user's systemd, or the network.
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -43,7 +43,7 @@ jq -n '{hooks: {UserPromptSubmit: [
   {hooks: [{type: "command", command: "other-hook"}]}]}}' > "$HOME/.claude/settings.json"
 
 snap() { (cd "$T/home" && find . -type f -newer "$T/stamp" | sort); }
-run() { "$ROOT/claude-setup" "$@" </dev/null; }
+run() { "$ROOT/claude-strapon" "$@" </dev/null; }
 
 # --- 1. dry run and no-terminal runs change nothing ----------------------------------
 touch "$T/stamp"; sleep 1
@@ -96,7 +96,7 @@ echo "ok 5  route with nothing on :8787 is flagged broken"
 
 # --- 6. interactive path, plain prompts, under a pseudo-terminal ------------------------
 json_tmp=$(mktemp); jq 'del(.model)' "$S" > "$json_tmp" && mv "$json_tmp" "$S"
-out=$(printf '\ny\n' | script -qec "'$ROOT/claude-setup' --only model" /dev/null | tr -d '\r') \
+out=$(printf '\ny\n' | script -qec "'$ROOT/claude-strapon' --only model" /dev/null | tr -d '\r') \
   || fail "interactive run failed: $out"
 grep -q 'numbers to toggle' <<<"$out" || fail "plain picker not shown: $out"
 grep -q 'Apply these? \[y/N\]' <<<"$out" || fail "no confirm prompt"

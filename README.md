@@ -1,4 +1,4 @@
-# claude-setup
+# claude-strapon
 
 One command that measures the Claude Code stack on this machine, shows what is there,
 and fixes what you pick: gum, Node 22, Claude Code, rtk, the caveman proxy route,
@@ -6,10 +6,10 @@ codegraph, the second account, effort-router, plugins, the statusline, agents + 
 and the default model.
 
 ```bash
-./claude-setup              # scan, board, pick, preview, confirm, apply, rescan
-./claude-setup --dry-run    # board + preview only; changes nothing
-./claude-setup --yes --only plugins,model    # unattended, limited
-./claude-setup --redo codegraph              # offer it even though it reads ok
+./claude-strapon              # scan, board, pick, preview, confirm, apply, rescan
+./claude-strapon --dry-run    # board + preview only; changes nothing
+./claude-strapon --yes --only plugins,model    # unattended, limited
+./claude-strapon --redo codegraph              # offer it even though it reads ok
 ```
 
 ## The board
@@ -35,7 +35,7 @@ the proof. A component that still does not read ● makes the run exit 1.
 
 ## Layout
 ```
-claude-setup            entry point
+claude-strapon            entry point
 lib/ui.sh               gum prompts, or numbered plain prompts without gum
 lib/claude.sh           account paths, json_edit, claude_as, node22_bin
 components/NN-name.sh   <name>_detect / _plan / _apply, run in NN order
@@ -43,15 +43,15 @@ files/                  what gets installed: effort-router.sh, agents/, skills/,
                         plugins.txt, plugins-remove.txt, marketplaces.txt,
                         caveman-proxy.service, router/ (config snapshots)
 docs/                   background: router, runbooks, model + effort guides
-tests/test-claude-setup.sh   sandbox HOME + stubs; touches nothing real
+tests/test-claude-strapon.sh   sandbox HOME + stubs; touches nothing real
 ```
 Adding a component means one file in `components/` with the three functions, plus
 `<name>_deps` and `<name>_optional=1` if they apply.
 
 ## Checks
 ```bash
-shellcheck -S warning -x -s bash claude-setup lib/*.sh components/*.sh tests/*.sh
-tests/test-claude-setup.sh
+shellcheck -S warning -x -s bash claude-strapon lib/*.sh components/*.sh tests/*.sh
+tests/test-claude-strapon.sh
 ```
 
 `docs/` predates this tool. Its `~/ops/...` paths and by-hand steps describe how the

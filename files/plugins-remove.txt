@@ -1,4 +1,4 @@
-# plugins claude-setup uninstalls when found (decided 2026-10-22)
+# plugins claude-strapon uninstalls when found (decided 2026-10-22)
 stripe@claude-plugins-official
 # library docs; unauthenticated and unused; codegraph covers your own code, not this
 context7@claude-plugins-official
