@@ -1,0 +1,5 @@
+# Components are sourced by a glob at runtime and read through ${!name} indirection:
+#   SC1090  the loop `. "$f"` cannot be followed statically
+#   SC2034  <name>_deps / <name>_optional / shared paths look unused to a per-file check
+# Both are structural here. Re-check by hand before adding a variable no component reads.
+disable=SC1090,SC2034

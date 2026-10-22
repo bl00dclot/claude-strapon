@@ -1,0 +1,15 @@
+[Unit]
+Description=caveman-proxy: Claude API route on 127.0.0.1:8787 (claude-setup)
+# Every claude session routes through this port; never give up restarting it.
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=%h/.caveman/bin/caveman-proxy
+Environment=CAVEMAN_LISTEN=127.0.0.1:8787 CAVEMAN_MODE=compress CAVEMAN_RECOVERY=mcp
+# A proxy started by `caveman claude` may already hold the port. The bind fails, this
+# unit waits, and it takes over within 15 s of that proxy exiting.
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target

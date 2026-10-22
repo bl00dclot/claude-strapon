@@ -1,0 +1,4 @@
+# name  source (added before plugins install)
+claude-plugins-official anthropics/claude-plugins-official
+caveman JuliusBrussee/caveman
+ponytail DietrichGebert/ponytail
