@@ -1,0 +1,11 @@
+{
+  "release": "bin-v2.1.0",
+  "artifacts": {
+    "caveman-proxy": "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1",
+    "caveman-engine": "a1df610e03dac8278c743badc03aad95dcc51238ea0431e14f3a07bb95a70345",
+    "caveman-mcp": "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde",
+    "cavemem": "f3998cb4819a3e088c65a943e4d1cf1abd9862175910a998559a88db26dfe5a2",
+    "caveman-browse": "015ac69ddd74230866fc6b5c3076f446fb614b41ff713a58df6ed333b66de52b",
+    "caveman-shrink": "1a34ce042e3843f8fb498c102261ea3f59b5f1898054160ca204e50011654a01"
+  }
+}

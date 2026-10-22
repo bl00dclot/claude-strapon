@@ -3,6 +3,8 @@
 Last verified: 2026-06-15 (live, in-session). Supersedes the 2026-06-14 "staged" status.
 Auth model: Claude Max subscription (OAuth) — verified live: ANTHROPIC_API_KEY,
 ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL all unset.
+**Superseded 2026-10-11:** ANTHROPIC_BASE_URL now routes through caveman-proxy on
+:8787 — see `docs/claude-router.md`.
 
 The 2026-06-14 pass staged everything that writes into `~/.claude/` into
 `handoff-runbook.md` because the ops contract (`~/ops/CLAUDE.md`) + deny rule

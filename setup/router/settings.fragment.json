@@ -1,0 +1,21 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8787/w/claude",
+    "_CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL": "1"
+  },
+  "hooks": {
+    "SessionStart":       [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "UserPromptSubmit":   [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "PreToolUse": [
+      {"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]},
+      {"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.config/nvm/versions/node/v22.22.3/bin/caveman' shrink-hook"}]}
+    ],
+    "PostToolUse":        [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "PostToolUseFailure": [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "PreCompact":         [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "SubagentStart":      [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "SubagentStop":       [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "Stop":               [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}],
+    "SessionEnd":         [{"hooks": [{"type": "command", "timeout": 30, "command": "'$HOME/.caveman/bin/caveman-proxy' native-hook claude --adapter '$HOME/.config/nvm/versions/node/v22.22.3/lib/node_modules/@caveman-ai/cli/dist/native-hook-fast.js'"}]}]
+  }
+}

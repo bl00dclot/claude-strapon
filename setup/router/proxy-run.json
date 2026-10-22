@@ -1,0 +1,24 @@
+{
+  "schema": "caveman.proxy.run.v1",
+  "pid": 167651,
+  "port": 8787,
+  "listen": "127.0.0.1:8787",
+  "mode": "compress",
+  "owner": "wrap",
+  "instance_token": "<redacted>",
+  "started_at": "2026-10-20T18:13:07.004677181Z",
+  "version": "bin-v2.1.0",
+  "recovery_via_mcp": true,
+  "compat_upstreams": {
+    "opencode-go": "https://opencode.ai/zen/go"
+  },
+  "provider_upstreams": {
+    "anthropic": "https://api.anthropic.com",
+    "gemini": "https://generativelanguage.googleapis.com",
+    "openai": "https://api.openai.com",
+    "openai-codex": "https://chatgpt.com/backend-api"
+  },
+  "compat_forward_headers": {
+    "opencode-go": null
+  }
+}

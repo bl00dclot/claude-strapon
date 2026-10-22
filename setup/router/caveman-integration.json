@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "agent": "claude",
+  "pack_version": "2.2.0",
+  "installed_at": "2026-10-11T16:08:29.367Z",
+  "detected_agent_version": "2.1.296 (Claude Code)",
+  "operations": [
+    {
+      "file": "$HOME/.claude/settings.json",
+      "kind": "claude-settings",
+      "backup": "$HOME/.caveman/integrations/backups/claude/2149067c-bd7b-44c8-bb57-1c715958c9d3/0.bin",
+      "before_exists": true,
+      "before_sha256": "sha256:252539d8d1826d53f05a7796d5e8b94bdf1f4cb1b2bf1db2843e27e09ae8424a",
+      "after_sha256": "sha256:60d9eceb3991638e8773c26e500f36ace42f91964c5849a71bc0622e8b6cacca",
+      "owned": {
+        "route": "http://127.0.0.1:8787/w/claude",
+        "previous_route": null,
+        "assume_first_party": "1"
+      }
+    },
+    {
+      "file": "$HOME/.claude.json",
+      "kind": "claude-mcp",
+      "backup": "$HOME/.caveman/integrations/backups/claude/2149067c-bd7b-44c8-bb57-1c715958c9d3/1.bin",
+      "before_exists": true,
+      "before_sha256": "sha256:2dc0d0c05b6fda4c9a85190df2403f23a7a205ac09a8570c6627df9cc471d9aa",
+      "after_sha256": "sha256:81f00d96c725a96f5ba92a10d5be2232c1b78768a7cddd4fb29a66658cc06673",
+      "owned": {
+        "installed_mcp": {
+          "type": "stdio",
+          "command": "$HOME/.caveman/bin/caveman-mcp",
+          "args": [],
+          "env": {}
+        },
+        "previous_mcp": null
+      }
+    }
+  ]
+}
