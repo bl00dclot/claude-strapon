@@ -110,4 +110,46 @@ mkdir -p "$P" && : > "$P/caveman-statusline.sh"
 out=$(run --yes --only statusline) || fail "statusline apply failed: $out"
 grep -q 'caveman badge (follows plugin updates)' <<<"$out" || fail "statusline not ok after apply: $out"
 echo "ok 7  statusline follows plugin updates"
+
+# --- 8. the settings route moves to the shell, so Remote Control can start -------------
+mkdir -p "$HOME/.caveman/bin" && printf '#!/bin/sh\n' > "$HOME/.caveman/bin/caveman-proxy" && chmod +x "$HOME/.caveman/bin/caveman-proxy"
+stub ss 'echo "LISTEN 0 4096 127.0.0.1:8787 0.0.0.0:*"'
+stub systemctl 'exit 0'
+json_tmp=$(mktemp); jq '.env = {ANTHROPIC_BASE_URL: "http://127.0.0.1:8787/w/claude", _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL: "1", ENABLE_TOOL_SEARCH: "auto"}
+  | .hooks.SessionStart = [{hooks: [{type: "command", command: "caveman-proxy native-hook session_start"}]}]' "$S" > "$json_tmp" && mv "$json_tmp" "$S"
+json_tmp=$(mktemp); jq '.mcpServers.caveman = {}' "$HOME/.claude.json" > "$json_tmp" && mv "$json_tmp" "$HOME/.claude.json"
+LINE=". \"$ROOT/files/claude-route.sh\""
+out=$(run --dry-run --only caveman) || fail "caveman dry run failed"
+grep -q 'route in settings.json blocks Remote Control' <<<"$out" || fail "settings route not flagged: $out"
+grep -qF "append to $HOME/.bashrc: $LINE" <<<"$out" || fail "plan lacks the bashrc line: $out"
+out=$(run --yes --only caveman) || fail "caveman apply failed: $out"
+[ "$(jq -c '.env' "$S")" = '{"ENABLE_TOOL_SEARCH":"auto"}' ] || fail "settings env wrong: $(jq -c .env "$S")"
+[ "$(grep -cxF "$LINE" "$HOME/.bashrc")" = 1 ] || fail "bashrc line not added once"
+grep -q 'All picked components read ok' <<<"$out" || fail "caveman not ok after apply: $out"
+out=$(run --yes --only caveman) || fail "caveman re-run failed"
+grep -q 'Nothing to fix' <<<"$out" || fail "caveman re-run was not a no-op: $out"
+[ "$(grep -cxF "$LINE" "$HOME/.bashrc")" = 1 ] || fail "re-run duplicated the bashrc line"
+echo "ok 8  settings route moved to ~/.bashrc, other env kept, re-run no-op"
+
+# --- 9. the shell function routes everything except Remote Control --------------------
+F=$T/fn; mkdir -p "$F"
+printf '#!/bin/sh\necho "url=${ANTHROPIC_BASE_URL-} fp=${_CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL-} dir=${CLAUDE_CONFIG_DIR-} args=$*"\n' > "$F/claude"
+chmod +x "$F/claude"
+# Parent env carries a route, as a shell opened from a routed session would.
+want() {
+  local got; got=$(env -i PATH="$F:/usr/bin:/bin" ANTHROPIC_BASE_URL=inherited _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL=1 \
+    bash --norc -c ". '$ROOT/files/claude-route.sh'; $1")
+  [ "$got" = "$2" ] || fail "'$1' gave '$got', want '$2'"
+}
+R=http://127.0.0.1:8787/w/claude
+want 'claude'                           "url=$R fp=1 dir= args="
+want 'claude -p remote-control'         "url=$R fp=1 dir= args=-p remote-control"
+want 'claude -p x -- --remote-control'  "url=$R fp=1 dir= args=-p x -- --remote-control"
+want 'claude --remote-control-session-name-prefix box' "url=$R fp=1 dir= args=--remote-control-session-name-prefix box"
+want 'claude remote-control --name a'   "url= fp= dir= args=remote-control --name a"
+want 'claude --remote-control phone'    "url= fp= dir= args=--remote-control phone"
+want 'claude --remote-control=phone'    "url= fp= dir= args=--remote-control=phone"
+want 'CLAUDE_CONFIG_DIR=/a2 claude rc'  "url= fp= dir=/a2 args=rc"
+want 'CLAUDE_CONFIG_DIR=/a2 claude'     "url=$R fp=1 dir=/a2 args="
+echo "ok 9  claude/claude2 routed; remote-control, rc, --remote-control go direct"
 echo "PASS"

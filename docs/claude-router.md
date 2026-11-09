@@ -10,7 +10,7 @@ Every Claude Code session on this box — `claude` (account 1, `~/.claude`) and 
 
 ```
 claude / claude2
-   │  ANTHROPIC_BASE_URL=http://127.0.0.1:8787/w/claude   (settings.json env)
+   │  ANTHROPIC_BASE_URL=http://127.0.0.1:8787/w/claude   (per launch: files/claude-route.sh)
    ▼
 caveman-proxy  127.0.0.1:8787   mode=compress, no inbound auth, no TLS (loopback only)
    │  /w/claude  ->  provider "anthropic"
@@ -25,6 +25,43 @@ claude-code-router (CCR): CCR sets `ANTHROPIC_AUTH_TOKEN` and breaks subscriptio
 
 The proxy also knows `gemini`, `openai`, `openai-codex` and `opencode-go` upstreams
 (`setup/router/proxy-run.json`); only the `/w/claude` route is used here.
+
+## Remote Control goes direct (2026-11-09)
+
+`claude remote-control` refuses any `ANTHROPIC_BASE_URL` that is not api.anthropic.com,
+and `_CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL` does not cover that check (Claude Code
+2.1.319: "Remote Control is only available when using Claude via api.anthropic.com").
+While the route sat in `settings.json` env it blocked Remote Control for both accounts:
+settings env beats a shell `ANTHROPIC_BASE_URL=`/empty override, `--settings` before the
+verb is refused, and a project `.claude/settings.local.json` override did not help (all
+tested 2026-11-09).
+
+So the route now comes from a shell function, `files/claude-route.sh`, sourced from
+`~/.bashrc`. It sets the route for every `claude` launch (and for `claude2`, an alias that
+expands to `claude`), except when the launch starts Remote Control. Those launches run
+direct and unset any route inherited from the parent shell:
+
+| Launch | Route |
+|---|---|
+| `claude`, `claude2`, `claude -p …` | proxy |
+| `claude remote-control`, `claude rc`, `claude2 rc` | direct |
+| `claude --remote-control [name]`, `--remote-control=name` | direct |
+
+This uses the same rule caveman's own `wrap` door applies (`claudeStartsRemoteControl`
+in `@caveman-ai/cli`). Sessions that Remote Control spawns inherit its env, so they run
+direct too. Remote Control sessions are not compressed. That cannot be avoided.
+
+The shell function does not cover these launches:
+- `caveman claude` (the native door): it launches the binary straight from caveman, so
+  the session runs direct. Use `claude`, or `caveman wrap claude` for a routed session.
+- A non-interactive launch, like a cron job, systemd, or `bash -c`: runs direct.
+- `/remote-control` typed inside a routed session: it is still refused. Start the session
+  with `claude --remote-control` instead.
+
+Because the journaled route is no longer in settings, `caveman status` may report the
+claude integration as drifted. `caveman doctor claude` or `caveman enable claude` can put
+the route back into settings.json. claude-strapon flags that as
+`route in settings.json blocks Remote Control`, and apply moves it again.
 
 ## Why both accounts use it
 
@@ -76,8 +113,8 @@ followed 12 ms later by a second launch that failed with `bind: address already 
 so two launchers raced and the loser exited. That is harmless, but it means more than one
 caller starts the proxy.
 
-If nothing listens on :8787, **every** claude and claude2 session fails to reach the API,
-because `ANTHROPIC_BASE_URL` is global. Check and recover:
+If nothing listens on :8787, every routed claude and claude2 session fails to reach the
+API. Remote Control launches still work, because they run direct. Check and recover:
 
 ```bash
 ss -tlpn 'sport = :8787'          # expect caveman-proxy
@@ -85,9 +122,8 @@ caveman status                    # native integrations: "claude  installed · �
 caveman claude                    # owner=wrap suggests this launches it — not yet tested
 ```
 
-Bypass without uninstalling: drop the two `env` keys from `~/.claude/settings.json`.
-Overriding with a shell `ANTHROPIC_BASE_URL=` prefix is untested; settings.json `env`
-may take precedence.
+To bypass the proxy for one launch, run `command claude …`, which skips the function.
+To bypass it for a whole shell, run `unset -f claude`.
 
 ## Rebuild on a fresh box
 
