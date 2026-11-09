@@ -67,7 +67,8 @@ its key through the proxy. Under the settings route only Claude sessions and the
 children got it. As before, whoever holds 127.0.0.1:8787 sees the bearer tokens. The
 systemd unit keeps the proxy restarting so the port is not left free, but on a host
 where other local users can bind ports, such as CI runners, a squatter on :8787
-would capture them.
+would capture them. The fix is planned but not deployed: systemd holds :8787 and the
+proxy moves to root-only :787. See ops `docs/caveman-gate-plan.md`.
 
 Because the journaled route is no longer in settings, `caveman status` may report the
 claude integration as drifted. `caveman doctor claude` or `caveman enable claude` can put
