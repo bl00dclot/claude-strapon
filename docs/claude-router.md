@@ -36,10 +36,10 @@ settings env beats a shell `ANTHROPIC_BASE_URL=`/empty override, `--settings` be
 verb is refused, and a project `.claude/settings.local.json` override did not help (all
 tested 2026-11-09).
 
-So the route now comes from a shell function, `files/claude-route.sh`, sourced from
-`~/.bashrc`. It sets the route for every `claude` launch (and for `claude2`, an alias that
-expands to `claude`), except when the launch starts Remote Control. Those launches run
-direct and unset any route inherited from the parent shell:
+So the route now comes from the shell. `files/claude-route.sh`, sourced from `~/.bashrc`,
+exports it, so everything started from an interactive shell inherits it: `claude2` (an
+alias that expands to `claude`), scripts, `sh -c` launchers, and `claude -p` workers.
+Its `claude()` function strips the route only for launches that start Remote Control:
 
 | Launch | Route |
 |---|---|
@@ -54,7 +54,10 @@ direct too. Remote Control sessions are not compressed. That cannot be avoided.
 The shell function does not cover these launches:
 - `caveman claude` (the native door): it launches the binary straight from caveman, so
   the session runs direct. Use `claude`, or `caveman wrap claude` for a routed session.
-- A non-interactive launch, like a cron job, systemd, or `bash -c`: runs direct.
+- A launch with no interactive shell above it (cron, systemd, a GUI launcher that runs
+  claude directly): runs direct.
+- `sh -c 'claude rc'`: it skips the function and inherits the route, so it is refused.
+  Use `env -u ANTHROPIC_BASE_URL claude rc` there.
 - `/remote-control` typed inside a routed session: it is still refused. Start the session
   with `claude --remote-control` instead.
 
@@ -122,8 +125,8 @@ caveman status                    # native integrations: "claude  installed · �
 caveman claude                    # owner=wrap suggests this launches it — not yet tested
 ```
 
-To bypass the proxy for one launch, run `command claude …`, which skips the function.
-To bypass it for a whole shell, run `unset -f claude`.
+To bypass the proxy for one launch, run `env -u ANTHROPIC_BASE_URL claude …`.
+To bypass it for a whole shell, run `unset ANTHROPIC_BASE_URL`.
 
 ## Rebuild on a fresh box
 

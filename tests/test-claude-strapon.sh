@@ -151,5 +151,7 @@ want 'claude --remote-control phone'    "url= fp= dir= args=--remote-control pho
 want 'claude --remote-control=phone'    "url= fp= dir= args=--remote-control=phone"
 want 'CLAUDE_CONFIG_DIR=/a2 claude rc'  "url= fp= dir=/a2 args=rc"
 want 'CLAUDE_CONFIG_DIR=/a2 claude'     "url=$R fp=1 dir=/a2 args="
-echo "ok 9  claude/claude2 routed; remote-control, rc, --remote-control go direct"
+want 'sh -c "claude -p x"'              "url=$R fp=1 dir= args=-p x"
+want 'unset ANTHROPIC_BASE_URL; claude' "url= fp=1 dir= args="
+echo "ok 9  claude/claude2 and sh children routed; remote-control, rc, --remote-control go direct"
 echo "PASS"
