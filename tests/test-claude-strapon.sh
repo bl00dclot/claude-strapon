@@ -134,7 +134,8 @@ echo "ok 8  settings route moved to ~/.bashrc, other env kept, re-run no-op"
 # --- 9. the shell function routes everything except Remote Control --------------------
 F=$T/fn; mkdir -p "$F"
 printf '#!/bin/sh\necho "url=${ANTHROPIC_BASE_URL-} fp=${_CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL-} dir=${CLAUDE_CONFIG_DIR-} args=$*"\n' > "$F/claude"
-chmod +x "$F/claude"
+sed 's/^echo "/echo "claude2 /' "$F/claude" > "$F/claude2"   # a server-style account wrapper on PATH
+chmod +x "$F/claude" "$F/claude2"
 # Parent env carries a route, as a shell opened from a routed session would.
 want() {
   local got; got=$(env -i PATH="$F:/usr/bin:/bin" ANTHROPIC_BASE_URL=inherited _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL=1 \
@@ -153,5 +154,13 @@ want 'CLAUDE_CONFIG_DIR=/a2 claude rc'  "url= fp= dir=/a2 args=rc"
 want 'CLAUDE_CONFIG_DIR=/a2 claude'     "url=$R fp=1 dir=/a2 args="
 want 'sh -c "claude -p x"'              "url=$R fp=1 dir= args=-p x"
 want 'unset ANTHROPIC_BASE_URL; claude' "url= fp=1 dir= args="
+want 'claude2'                          "claude2 url=$R fp=1 dir= args="
+want 'claude2 rc'                       "claude2 url= fp= dir= args=rc"
+want 'type -t claude1 || echo none'     "none"
+# an alias named claude2 (devbox) must survive sourcing: no function defined over it
+got=$(env -i PATH="/usr/bin:/bin" bash --norc -ic "alias claude2='echo aliased'
+. '$ROOT/files/claude-route.sh'
+claude2" 2>/dev/null)
+[ "$got" = aliased ] || fail "alias claude2 broken by sourcing: '$got'"
 echo "ok 9  claude/claude2 and sh children routed; remote-control, rc, --remote-control go direct"
 echo "PASS"

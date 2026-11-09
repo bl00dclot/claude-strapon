@@ -61,6 +61,14 @@ The shell function does not cover these launches:
 - `/remote-control` typed inside a routed session: it is still refused. Start the session
   with `claude --remote-control` instead.
 
+Tradeoff of exporting: every process started from an interactive shell sees the route,
+not only Claude Code. Any Anthropic SDK client that honours `ANTHROPIC_BASE_URL` sends
+its key through the proxy. Under the settings route only Claude sessions and their
+children got it. As before, whoever holds 127.0.0.1:8787 sees the bearer tokens. The
+systemd unit keeps the proxy restarting so the port is not left free, but on a host
+where other local users can bind ports, such as CI runners, a squatter on :8787
+would capture them.
+
 Because the journaled route is no longer in settings, `caveman status` may report the
 claude integration as drifted. `caveman doctor claude` or `caveman enable claude` can put
 the route back into settings.json. claude-strapon flags that as
