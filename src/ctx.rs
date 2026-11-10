@@ -1,4 +1,3 @@
-#![allow(dead_code)] // accounts/MCP helpers: used from Task 4 on; removed in Task 7
 //! Where each Claude account keeps its state, and how to run the tools that read it.
 //!
 //! Account 1 is the default config dir (~/.claude + ~/.claude.json). Account N ≥ 2 is

@@ -6,10 +6,14 @@ use crate::ctx::Ctx;
 
 pub mod accounts;
 mod agents_skills;
+mod caveman;
 mod claude_code;
+mod codegraph;
 mod effort_router;
 mod model;
 mod node22;
+mod plugins;
+mod rtk;
 mod statusline;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -61,8 +65,12 @@ pub fn all() -> Vec<Component> {
     vec![
         node22::C,
         claude_code::C,
+        rtk::C,
+        caveman::C,
+        codegraph::C,
         accounts::C,
         effort_router::C,
+        plugins::C,
         statusline::C,
         agents_skills::C,
         model::C,

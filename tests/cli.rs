@@ -354,3 +354,120 @@ fn real_file_blocks_link() {
     assert!(fs::symlink_metadata(a3.join("settings.json")).unwrap().is_file());
     assert_eq!(fs::read_to_string(a3.join("settings.json")).unwrap(), "{\"mine\":1}");
 }
+
+// --- rtk, caveman, codegraph, plugins --------------------------------------------------
+
+const ROUTE: &str = "http://127.0.0.1:8787/w/claude";
+
+fn route_line() -> String {
+    format!(". \"{ROOT}/files/claude-route.sh\"")
+}
+
+fn set_json(p: &Path, filter: &str) {
+    let o = Command::new("jq").arg(filter).arg(p).output().unwrap();
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    fs::write(p, o.stdout).unwrap();
+}
+
+/// caveman installed, proxy binaries + hooks + MCP present, settings route still in place.
+fn caveman_ready(sb: &Sb) {
+    sb.stub("caveman", "exit 0");
+    sb.stub("systemctl", "exit 0");
+    let b = sb.home.join(".caveman/bin");
+    fs::create_dir_all(&b).unwrap();
+    sb.write_exec(&b.join("caveman-proxy"), "");
+    set_json(
+        &sb.settings(),
+        &format!(
+            r#".env = {{ANTHROPIC_BASE_URL: "{ROUTE}", _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL: "1", ENABLE_TOOL_SEARCH: "auto"}}
+              | .hooks.SessionStart = [{{hooks: [{{type: "command", command: "caveman-proxy native-hook session_start"}}]}}]"#
+        ),
+    );
+    set_json(&sb.home.join(".claude.json"), ".mcpServers.caveman = {}");
+}
+
+#[test]
+fn optional_unticked() {
+    let sb = Sb::new("optional");
+    fs::remove_file(sb.bin.join("rtk")).unwrap();
+    let (code, out) = sb.run(&["--dry-run"]);
+    assert_eq!(code, 0, "{out}");
+    for absent in ["npm i -g @caveman-ai/cli", "npm i -g @colbymchenry/codegraph", "rtk init -g"] {
+        assert!(!out.contains(absent), "{absent} pre-ticked:\n{out}");
+    }
+    has(&sb.run(&["--dry-run", "--only", "caveman"]).1, "npm i -g @caveman-ai/cli@2.1.0");
+    has(&sb.run(&["--dry-run", "--only", "codegraph"]).1, "npm i -g @colbymchenry/codegraph");
+    has(&sb.run(&["--dry-run", "--only", "rtk"]).1, "rtk init -g --auto-patch");
+}
+
+#[test]
+fn dead_route_broken() {
+    let sb = Sb::new("deadroute");
+    sb.stub("caveman", "exit 0");
+    set_json(&sb.settings(), &format!(r#".env.ANTHROPIC_BASE_URL = "{ROUTE}""#));
+    let (code, out) = sb.run(&["--dry-run", "--only", "caveman"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, "route set but nothing on :8787");
+}
+
+#[test]
+fn route_moves_to_shell() {
+    let sb = Sb::new("route");
+    caveman_ready(&sb);
+    sb.stub("ss", r#"echo "LISTEN 0 4096 127.0.0.1:8787 0.0.0.0:*""#);
+    let (_, out) = sb.run(&["--dry-run", "--only", "caveman"]);
+    has(&out, "route in settings.json blocks Remote Control");
+    has(&out, &format!("append to {}/.bashrc: {}", sb.home.display(), route_line()));
+    let (code, out) = sb.run(&["--yes", "--only", "caveman"]);
+    assert_eq!(code, 0, "{out}");
+    assert_eq!(jq(&sb.settings(), ".env | tojson"), r#"{"ENABLE_TOOL_SEARCH":"auto"}"#);
+    assert_eq!(bashrc_count(&sb, &route_line()), 1);
+    has(&out, "All picked components read ok");
+    let (code, out) = sb.run(&["--yes", "--only", "caveman"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, "Nothing to fix");
+    assert_eq!(bashrc_count(&sb, &route_line()), 1);
+}
+
+#[test]
+fn route_not_written_while_down() {
+    let sb = Sb::new("routedown");
+    caveman_ready(&sb);
+    set_json(&sb.settings(), "del(.env.ANTHROPIC_BASE_URL)");
+    let (code, out) = sb.run(&["--yes", "--only", "caveman"]);
+    assert_eq!(code, 1, "{out}");
+    has(&out, "nothing listens on :8787");
+    assert_eq!(bashrc_count(&sb, &route_line()), 0);
+}
+
+#[test]
+fn plugins_diff() {
+    let sb = Sb::new("plugins");
+    let (_, out) = sb.run(&["--dry-run", "--only", "plugins"]);
+    has(&out, "remove: stripe");
+    has(&out, "claude plugin uninstall -s user -y stripe@claude-plugins-official");
+    sb.run(&["--yes", "--only", "plugins"]);
+    let log = fs::read_to_string(sb.home.join("claude-plugin.log")).unwrap_or_default();
+    assert_eq!(log.trim(), "plugin uninstall -s user -y stripe@claude-plugins-official");
+}
+
+#[test]
+fn codegraph_every_logged_in_account() {
+    let sb = Sb::new("codegraph");
+    let pkg = sb.home.join(".nvm/versions/node/v22.9.0/lib/node_modules/@colbymchenry/codegraph");
+    fs::create_dir_all(&pkg).unwrap();
+    fs::write(pkg.join("npm-shim.js"), "").unwrap();
+    fs::write(pkg.join("package.json"), r#"{"version": "1.2.3"}"#).unwrap();
+    sb.link_account(3);
+    fs::write(sb.home.join(".claude-account3/.claude.json"), "{}").unwrap();
+    sb.link_account(4); // not logged in
+    let (_, out) = sb.run(&["--dry-run", "--only", "codegraph"]);
+    has(&out, "1.2.3");
+    has(&out, "claude3: not registered");
+    sb.run(&["--yes", "--only", "codegraph"]);
+    let log = fs::read_to_string(sb.home.join("claude-mcp.log")).unwrap();
+    let adds: Vec<&str> = log.lines().filter(|l| l.contains("mcp add codegraph")).map(|l| l.split(' ').next().unwrap()).collect();
+    let h = sb.home.display();
+    assert_eq!(adds, ["acct1".to_string(), format!("{h}/.claude-account2"), format!("{h}/.claude-account3")]);
+    assert!(log.contains("serve --mcp"), "{log}");
+}
