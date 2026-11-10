@@ -1,3 +1,4 @@
+#![allow(dead_code)] // accounts/MCP helpers: used from Task 4 on; removed in Task 7
 //! Where each Claude account keeps its state, and how to run the tools that read it.
 //!
 //! Account 1 is the default config dir (~/.claude + ~/.claude.json). Account N ≥ 2 is
@@ -126,6 +127,16 @@ pub fn ok(cmd: &mut Command) -> bool {
 /// For apply: output goes to the user; stdin stays theirs (installers may prompt).
 pub fn run(cmd: &mut Command) -> bool {
     cmd.status().is_ok_and(|s| s.success())
+}
+
+/// So later components find what an installer just put in `dir`.
+pub fn prepend_path(dir: &Path) {
+    let mut v = vec![dir.to_path_buf()];
+    v.extend(env::split_paths(&env::var_os("PATH").unwrap_or_default()));
+    if let Ok(p) = env::join_paths(v) {
+        // SAFETY: only apply calls this, on the main thread, after the scan threads joined.
+        unsafe { env::set_var("PATH", p) }
+    }
 }
 
 pub fn which(name: &str) -> Option<PathBuf> {
