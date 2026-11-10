@@ -25,8 +25,31 @@ const UNIT: &str = "caveman-proxy.service";
 fn cli(c: &Ctx) -> Option<PathBuf> {
     ctx::which("caveman").or_else(|| c.node22_bin().map(|b| b.join("caveman")).filter(|p| ctx::is_exec(p)))
 }
+#[derive(PartialEq)]
+enum Port {
+    Down,
+    /// held by this user or root
+    Ours,
+    /// held by anyone else: a route would hand them every session's credentials
+    Other(String),
+}
+
+fn port() -> Port {
+    let s = ctx::out(Command::new("ss").args(["-tlnHe", "sport = :8787"])).unwrap_or_default();
+    if s.trim().is_empty() {
+        return Port::Down;
+    }
+    let me = { use std::os::unix::fs::MetadataExt; fs::metadata("/proc/self").map(|m| m.uid()).ok() };
+    let uids: Vec<u32> = s.split_whitespace().filter_map(|w| w.strip_prefix("uid:")?.parse().ok()).collect();
+    match uids.iter().find(|&&u| u != 0 && Some(u) != me) {
+        Some(u) => Port::Other(format!("uid {u}")),
+        None if uids.is_empty() => Port::Other("an owner ss does not show".into()),
+        None => Port::Ours,
+    }
+}
+
 fn up() -> bool {
-    ctx::out(Command::new("ss").args(["-tlnH", "sport = :8787"])).is_some_and(|s| !s.trim().is_empty())
+    port() == Port::Ours
 }
 fn bins(c: &Ctx) -> bool {
     ctx::is_exec(&c.home.join(".caveman/bin/caveman-proxy"))
@@ -105,13 +128,17 @@ fn plan(c: &Ctx, s: &Value, has_cli: bool, is_up: bool, has_unit: bool, has_mcp:
 fn detect(c: &Ctx) -> Report {
     let s = c.settings_json();
     let has_cli = cli(c).is_some();
-    let (is_up, has_unit, has_mcp) = std::thread::scope(|sc| {
+    let (port, has_unit, has_mcp) = std::thread::scope(|sc| {
         let m = sc.spawn(mcp);
-        (up(), unit(), m.join().unwrap_or(false))
+        (port(), unit(), m.join().unwrap_or(false))
     });
+    let is_up = port == Port::Ours;
     let p = plan(c, &s, has_cli, is_up, has_unit, has_mcp);
     if !has_cli {
         return Report::new(State::Missing, "caveman CLI not installed").plan(p);
+    }
+    if let Port::Other(who) = &port {
+        return Report::new(State::Broken, format!(":8787 held by {who}, not you or root — a route there hands them your credentials")).plan(p);
     }
     if (settings_route(&s) || shell_route(c)) && !is_up {
         return Report::new(State::Broken, "route set but nothing on :8787 — every claude session fails").plan(p);
@@ -173,10 +200,14 @@ fn apply(c: &Ctx) -> Result<(), String> {
     // Shell route first, then drop the settings one, so no step leaves claude unrouted.
     if bins(c) {
         if !shell_route(c) {
-            let listening = up() || (started && (0..5).any(|_| {
-                std::thread::sleep(std::time::Duration::from_secs(1));
-                up()
-            }));
+            let listening = match port() {
+                Port::Ours => true,
+                Port::Other(who) => return Err(format!(":8787 is held by {who}, not you or root, so the route was not written.")),
+                Port::Down => started && (0..5).any(|_| {
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    up()
+                }),
+            };
             if !listening {
                 return Err(format!(
                     "nothing listens on :8787, so the route was not written (a route with no proxy fails every session). \

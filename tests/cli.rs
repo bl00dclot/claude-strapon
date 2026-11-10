@@ -386,6 +386,38 @@ fn caveman_ready(sb: &Sb) {
     set_json(&sb.home.join(".claude.json"), ".mcpServers.caveman = {}");
 }
 
+fn my_uid() -> u32 {
+    use std::os::unix::fs::MetadataExt;
+    fs::metadata("/proc/self").unwrap().uid()
+}
+
+/// An `ss -tlnHe` stub reporting a listener on :8787 owned by `uid`.
+fn listener(uid: u32) -> String {
+    format!(r#"echo "LISTEN 0 4096 127.0.0.1:8787 0.0.0.0:* uid:{uid} ino:1 sk:1 <->""#)
+}
+
+#[test]
+fn foreign_listener_gets_no_route() {
+    let sb = Sb::new("foreign");
+    caveman_ready(&sb);
+    sb.stub("ss", &listener(4242));
+    set_json(&sb.settings(), "del(.env.ANTHROPIC_BASE_URL)");
+    let (code, out) = sb.run(&["--yes", "--only", "caveman"]);
+    assert_eq!(code, 1, "{out}");
+    has(&out, "held by uid 4242");
+    assert_eq!(bashrc_count(&sb, &route_line()), 0);
+}
+
+#[test]
+fn route_to_foreign_listener_is_broken() {
+    let sb = Sb::new("foreignroute");
+    caveman_ready(&sb);
+    sb.stub("ss", &listener(4242));
+    let (_, out) = sb.run(&["--dry-run", "--only", "caveman"]);
+    has(&out, "✗ caveman");
+    has(&out, "held by uid 4242");
+}
+
 #[test]
 fn optional_unticked() {
     let sb = Sb::new("optional");
@@ -414,7 +446,7 @@ fn dead_route_broken() {
 fn route_moves_to_shell() {
     let sb = Sb::new("route");
     caveman_ready(&sb);
-    sb.stub("ss", r#"echo "LISTEN 0 4096 127.0.0.1:8787 0.0.0.0:*""#);
+    sb.stub("ss", &listener(my_uid()));
     let (_, out) = sb.run(&["--dry-run", "--only", "caveman"]);
     has(&out, "route in settings.json blocks Remote Control");
     has(&out, &format!("append to {}/.bashrc: {}", sb.home.display(), route_line()));
