@@ -130,7 +130,7 @@ denied there.
 - **F5 — a mechanism behaves unlike its name at boot or reload.** `a9af27b`
   network-online.target vacuous so smbd bound loopback-only; `0a2c0cd` smbd reload never
   re-binds sockets; `4b6dd03` `.link` needs an add event, not a change event;
-  `735bb27` sleep-nas froze the terminal.
+  `735bb27` the NAS kill script froze the terminal.
 - **F6 — blanket staging sweeps unrelated files.** `7c699a9` fixed exactly this, then
   `4c38283` swept `state/otel/*` into a NAS commit anyway. A prompt rule did not survive
   across sessions. Recurrence after a fix is what promotes it to a class.
@@ -301,7 +301,7 @@ gate rather than at a diff.
 | `shellcheck-agent`, `test-runner` | existing gate — `agent-taskcompleted.sh` runs shellcheck over `scripts/*.sh` and `state/`; `test-teleport.sh`, `test-nas-idle.sh` exist |
 | `state-author`, `runbook-author`, `ssh-hazard-table`, `evidence-auditor` | duplicate — already in this roster |
 | `tier2-wrapper-author`, `settings-editor` | guardrail write — `deny Edit(bin/**)`, `Edit(//usr/local/sbin/claude-*)`, `Edit(.claude/**)` |
-| `transfer-operator` | needs execute authority on a destructive path (`nas mv`, which deletes the source after verifying) |
+| `transfer-operator` | needs execute authority on a destructive path (the NAS move command, which deletes the source after verifying) |
 | `catalog-builder` | deterministic producer — `docs/ux-plan.md` phase 1 is a script |
 | `convention-auditor` | one-off — n=2 (a missing `flock`, a missing local manifest), both in one session by one author; folds into `check-auditor` |
 | `doc-drift` | no failure class — no commit in 71 fixes a stale doc |

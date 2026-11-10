@@ -1,4 +1,5 @@
 # Handoff runbook — guardrail-touching steps (YOU run these)
+> **Historical.** Predates claude-strapon; paths and steps are from the original by-hand setup. Current procedure: [components.md](components.md). Index: [README.md](README.md).
 
 The ops agent is forbidden by its operating contract (`~/ops/CLAUDE.md`) and by the deny
 rule `Edit(~/.claude/**)` from modifying `~/.claude/`. Everything below writes into

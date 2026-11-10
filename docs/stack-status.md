@@ -1,4 +1,5 @@
 # Claude Code optimization stack — status
+> **Historical.** Predates claude-strapon; paths and steps are from the original by-hand setup. Current procedure: [components.md](components.md). Index: [README.md](README.md).
 
 Last verified: 2026-06-15 (live, in-session). Supersedes the 2026-06-14 "staged" status.
 Auth model: Claude Max subscription (OAuth) — verified live: ANTHROPIC_API_KEY,

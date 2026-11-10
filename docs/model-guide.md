@@ -1,5 +1,7 @@
 # Claude Code model guide (subscription — speed is the differentiator, not cost)
 
+> **Historical.** Model IDs are from mid-2026. The `model` component now pins `opus[1m]`; see [components.md](components.md#model). Index: [README.md](README.md).
+
 | Task type                                      | Model                            | Why                           |
 |------------------------------------------------|----------------------------------|-------------------------------|
 | Renaming, typo fixes, simple file edits        | claude-haiku-4-5-20251001        | Fastest responses             |

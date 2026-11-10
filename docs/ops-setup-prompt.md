@@ -1,4 +1,5 @@
 # Claude Code Optimization Stack — Setup Prompt
+> **Historical.** Predates claude-strapon; paths and steps are from the original by-hand setup. Current procedure: [components.md](components.md). Index: [README.md](README.md).
 # Paste this entire prompt into Claude Code running inside ~/ops
 
 ---

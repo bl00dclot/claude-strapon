@@ -1,4 +1,5 @@
 # Claude Code optimization stack — activation guide
+> **Historical.** Predates claude-strapon; paths and steps are from the original by-hand setup. Current procedure: [components.md](components.md). Index: [README.md](README.md).
 
 How the stack turns on, what scope each piece lives at, and what (if anything) you run
 per repo or per session. The stack is **already active on this box** (verified

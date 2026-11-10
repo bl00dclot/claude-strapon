@@ -57,7 +57,7 @@ echo "ok 2  accounts file alone: launchers without a forced route"
 want claude-route.sh "$H2" 'claude3' "url=$R fp=1 dir=$H2/.claude-account3 args="
 echo "ok 3  quoted HOME"
 
-# An alias of the same name (claude2 on devbox) must survive sourcing.
+# An alias of the same name (claude2 on the dev box) must survive sourcing.
 got=$(env -i HOME="$H" PATH="/usr/bin:/bin" bash --norc -ic "alias claude2='echo aliased'
 . '$ROOT/files/claude-route.sh'
 claude2" 2>/dev/null)

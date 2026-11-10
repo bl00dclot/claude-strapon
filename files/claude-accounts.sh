@@ -11,7 +11,7 @@
 # first position, or `--remote-control[=name]` before `--` (the rule `caveman wrap claude`
 # applies). Without a route in the environment that is a no-op.
 #
-# A name that is already an alias is left to the alias (claude2 on devbox expands to
+# A name that is already an alias is left to the alias (claude2 on the dev box expands to
 # `claude`, so it gets the rule anyway). A name that is an executable on PATH (the
 # servers' claude1/claude2 wrappers) is wrapped, not replaced.
 

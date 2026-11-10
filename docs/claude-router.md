@@ -1,6 +1,7 @@
 # Claude router — how both Claude instances reach the API
+> **Historical.** Predates claude-strapon; paths and steps are from the original by-hand setup. Current procedure: [components.md](components.md). Index: [README.md](README.md).
 
-Measured on devbox, 2026-10-22. Snapshot of the live config: `setup/router/`.
+Measured on the dev box, 2026-10-22. Snapshot of the live config: `setup/router/`.
 
 ## What it is
 

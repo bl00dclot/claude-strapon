@@ -15,9 +15,9 @@ with one sandbox test. Three owner asks:
    the board (owner ruling). Picking them is opt-in, same as statusline today.
 3. **Rewrite in Rust with ratatui** (owner ruling, after web research: Rust/Go/Zig startup
    differences are milliseconds; Rust chosen for ratatui, single static binary, cargo
-   1.99 already on devbox).
+   1.99 already on the dev box).
 
-Measured baseline (devbox, 2026-11-10): `./claude-strapon --dry-run </dev/null` takes
+Measured baseline (dev box, 2026-11-10): `./claude-strapon --dry-run </dev/null` takes
 **11.5 s** wall, 3.4 s user. Nearly all of it is serial subprocesses: `claude mcp get`
 (health-checks the server) per account per component, `claude plugin list`,
 `rtk init --show`. The speed win comes from design, not the language: run detectors
@@ -46,7 +46,7 @@ concurrently and read JSON files directly where the CLI is not the only source o
   `files/caveman-proxy.service`, agents, skills, plugin lists stay as files. (effort-router
   runs on every prompt; porting it is a possible later win, not this project.)
 - Per-account settings. Every account links to `~/.claude`.
-- Remote hosts (server-a, server-b): their `/root/agent/claude-route.sh` is
+- Remote servers: their own copy of `claude-route.sh` is
   managed from ops, not here.
 - Logging accounts in. Login stays by hand (`claudeN`, then `/login`).
 - The unmerged `origin/seat-profile` branch (bash component `96-seat-profile`). Left as is;
@@ -127,7 +127,7 @@ safe to run concurrently; apply runs serially in order.
 
 ## Constraints
 
-- Linux only (devbox, Debian 13). Single binary built with `cargo build --release`;
+- Linux only (dev box, Debian 13). Single binary built with `cargo build --release`;
   the repo's `claude-strapon` path stays the entry (wrapper or the binary itself, builder's call).
 - External tools stay external: `claude`, `npm`, `systemctl --user`, `ss`, `rtk`,
   `caveman`, `curl … | bash` installers. JSON handling moves in-process (serde_json); `jq`
@@ -158,7 +158,7 @@ optional components unticked unless `--only`; accounts discovery with 2 and 3 ac
    `--yes` it still stops after the preview.
 3. **Accounts not logged in yet.** Shown as `!` sub-rows. They do not count against
    ok/exit code (same as `needs` today). A later run picks up newly logged-in ones.
-4. **Speed bar.** Dry run on devbox ≤ 4 s with the same stack, through parallelism.
+4. **Speed bar.** Dry run on the dev box ≤ 4 s with the same stack, through parallelism.
    `claude mcp get`, `claude plugin list` and `rtk init --show` stay as the sources of
    truth: no reading their private files.
 5. **UI tests.** Integration tests cover the non-interactive paths (dry run, no tty,
