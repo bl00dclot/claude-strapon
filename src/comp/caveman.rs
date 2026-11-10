@@ -40,10 +40,12 @@ fn port() -> Port {
         return Port::Down;
     }
     let me = { use std::os::unix::fs::MetadataExt; fs::metadata("/proc/self").map(|m| m.uid()).ok() };
-    let uids: Vec<u32> = s.split_whitespace().filter_map(|w| w.strip_prefix("uid:")?.parse().ok()).collect();
-    match uids.iter().find(|&&u| u != 0 && Some(u) != me) {
+    // ss -e omits `uid:` for root-owned sockets, so a line without one is root's.
+    let uids = s.lines().filter(|l| !l.trim().is_empty()).map(|l| {
+        l.split_whitespace().find_map(|w| w.strip_prefix("uid:")?.parse::<u32>().ok()).unwrap_or(0)
+    });
+    match uids.into_iter().find(|&u| u != 0 && Some(u) != me) {
         Some(u) => Port::Other(format!("uid {u}")),
-        None if uids.is_empty() => Port::Other("an owner ss does not show".into()),
         None => Port::Ours,
     }
 }

@@ -409,6 +409,17 @@ fn foreign_listener_gets_no_route() {
 }
 
 #[test]
+fn root_listener_gets_the_route() {
+    // Real `ss -e` prints no uid: field for a root-owned socket.
+    let sb = Sb::new("rootlisten");
+    caveman_ready(&sb);
+    sb.stub("ss", r#"echo "LISTEN 0 4096 127.0.0.1:8787 0.0.0.0:* ino:28951 sk:1002 <->""#);
+    let (code, out) = sb.run(&["--yes", "--only", "caveman"]);
+    assert_eq!(code, 0, "{out}");
+    assert_eq!(bashrc_count(&sb, &route_line()), 1);
+}
+
+#[test]
 fn route_to_foreign_listener_is_broken() {
     let sb = Sb::new("foreignroute");
     caveman_ready(&sb);
