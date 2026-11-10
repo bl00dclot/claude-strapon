@@ -27,7 +27,8 @@ Contents: [Quick start](#quick-start) · [How a run works](#how-a-run-works) ·
 [Flags](#flags) · [Components](#components) · [Accounts](#accounts) ·
 [The caveman route](#the-caveman-route) · [Safety](#safety) ·
 [Troubleshooting](#troubleshooting) · [Undo and uninstall](#undo-and-uninstall) ·
-[Development](#development) · [Security](#security) · [More docs](#more-docs)
+[Development](#development) · [Security](#security) · [More docs](#more-docs) ·
+[License](#license)
 
 ## Quick start
 
@@ -327,3 +328,7 @@ servers into an account's `.claude.json`, the other keys pass through untouched.
   current procedure.
 - [docs/superpowers/](docs/superpowers/): the design and plan of the Rust rewrite
   (2026-11-10).
+
+## License
+
+[MIT](LICENSE) © 2026 bl00dclot

@@ -4,6 +4,7 @@ version = "0.2.0"
 edition = "2024"
 description = "Measure the Claude Code stack on this machine, then fix what is not there"
 publish = false
+license = "MIT"
 
 [dependencies]
 ratatui = "0.30"
