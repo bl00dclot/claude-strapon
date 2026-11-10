@@ -6,6 +6,7 @@ description = "Measure the Claude Code stack on this machine, then fix what is n
 publish = false
 
 [dependencies]
+ratatui = "0.30"
 serde_json = { version = "1", features = ["preserve_order"] }
 
 [profile.release]
