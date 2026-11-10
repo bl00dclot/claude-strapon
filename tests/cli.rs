@@ -238,3 +238,119 @@ fn worktree_warning() {
     let (_, out) = sb.run(&["--dry-run", "--only", "model"]);
     assert!(!out.contains("is a git worktree"), "{out}");
 }
+
+// --- accounts -------------------------------------------------------------------------
+
+fn mode(p: &Path) -> u32 {
+    fs::metadata(p).unwrap().permissions().mode() & 0o777
+}
+fn launcher_line() -> String {
+    format!(". \"{ROOT}/files/claude-accounts.sh\"")
+}
+fn bashrc_count(sb: &Sb, line: &str) -> usize {
+    fs::read_to_string(sb.home.join(".bashrc")).unwrap_or_default().lines().filter(|l| l.trim() == line).count()
+}
+
+#[test]
+fn accounts_merge_mcp() {
+    let sb = Sb::new("acct-merge");
+    let (code, out) = sb.run(&["--dry-run", "--only", "accounts"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, "MCP missing: dune");
+    let (code, out) = sb.run(&["--yes", "--only", "accounts"]);
+    assert_eq!(code, 0, "{out}");
+    let a2 = sb.home.join(".claude-account2");
+    assert!(fs::symlink_metadata(a2.join("settings.json")).unwrap().file_type().is_symlink());
+    assert_eq!(jq(&a2.join(".claude.json"), ".mcpServers | keys | join(\",\")"), "codegraph,dune");
+    assert_eq!(jq(&a2.join(".claude.json"), ".oauthAccount.x"), "1");
+    assert_eq!(mode(&a2.join(".claude.json")), 0o600);
+    assert_eq!(bashrc_count(&sb, &launcher_line()), 1);
+    has(&out, "All picked components read ok");
+}
+
+#[test]
+fn three_accounts() {
+    let sb = Sb::new("acct-three");
+    let a3 = sb.home.join(".claude-account3");
+    fs::create_dir_all(&a3).unwrap();
+    fs::write(a3.join(".claude.json"), r#"{"mcpServers": {}}"#).unwrap();
+    let (_, out) = sb.run(&["--dry-run", "--only", "accounts"]);
+    has(&out, "claude3");
+    has(&out, "0/7 links");
+    has(&out, "MCP missing: codegraph dune");
+    let (code, out) = sb.run(&["--yes", "--only", "accounts"]);
+    assert_eq!(code, 0, "{out}");
+    assert_eq!(fs::read_link(a3.join("skills")).unwrap(), sb.home.join(".claude/skills"));
+    assert_eq!(jq(&a3.join(".claude.json"), ".mcpServers | keys | join(\",\")"), "codegraph,dune");
+}
+
+#[test]
+fn not_logged_in_is_needs() {
+    let sb = Sb::new("acct-login");
+    sb.link_account(4);
+    let (code, out) = sb.run(&["--yes", "--only", "accounts"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, "log in once: claude4");
+}
+
+#[test]
+fn add_accounts() {
+    let sb = Sb::new("acct-add");
+    sb.link_account(3);
+    fs::write(sb.home.join(".claude-account3/.claude.json"), r#"{"mcpServers": {"codegraph": {}, "dune": {}}}"#).unwrap();
+    let (code, out) = sb.run(&["--yes", "--only", "accounts", "--add-accounts", "2"]);
+    assert_eq!(code, 0, "{out}");
+    for n in [4, 5] {
+        let d = sb.home.join(format!(".claude-account{n}"));
+        assert_eq!(mode(&d), 0o700, "{n}");
+        let links = fs::read_dir(&d).unwrap().flatten().filter(|e| e.file_type().unwrap().is_symlink()).count();
+        assert_eq!(links, 7, "{n}");
+        has(&out, &format!("log in once: claude{n}"));
+    }
+    assert!(!sb.home.join(".claude-account6").exists());
+    assert_eq!(bashrc_count(&sb, &launcher_line()), 1);
+    let (code, out) = sb.run(&["--yes", "--only", "accounts"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, "Nothing to fix");
+    assert_eq!(bashrc_count(&sb, &launcher_line()), 1);
+}
+
+#[test]
+fn add_accounts_dry_run() {
+    let sb = Sb::new("acct-adddry");
+    let (code, out) = sb.run(&["--dry-run", "--add-accounts", "1"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, &format!("create {}/.claude-account3", sb.home.display()));
+    assert_eq!(sb.changed(), Vec::<String>::new());
+}
+
+#[test]
+fn junk_dirs_ignored() {
+    let sb = Sb::new("acct-junk");
+    for j in [".claude-account02", ".claude-accountx", ".claude-account1", ".claude-account"] {
+        fs::create_dir_all(sb.home.join(j)).unwrap();
+    }
+    let (code, out) = sb.run(&["--yes", "--only", "accounts"]);
+    assert_eq!(code, 0, "{out}");
+    has(&out, "claude2");
+    for name in ["claude02", "claudex", "claude1 "] {
+        assert!(!out.contains(name), "{name} in:\n{out}");
+    }
+    for j in [".claude-account02", ".claude-accountx", ".claude-account1", ".claude-account"] {
+        assert_eq!(fs::read_dir(sb.home.join(j)).unwrap().count(), 0, "{j} touched");
+    }
+}
+
+#[test]
+fn real_file_blocks_link() {
+    let sb = Sb::new("acct-real");
+    let a3 = sb.home.join(".claude-account3");
+    fs::create_dir_all(&a3).unwrap();
+    fs::write(a3.join("settings.json"), "{\"mine\":1}").unwrap();
+    fs::write(a3.join(".claude.json"), "{}").unwrap();
+    let (code, out) = sb.run(&["--yes", "--only", "accounts"]);
+    assert_eq!(code, 1, "{out}");
+    has(&out, "not links, move aside by hand: settings.json");
+    assert!(fs::symlink_metadata(a3.join("settings.json")).unwrap().is_file());
+    assert_eq!(fs::read_to_string(a3.join("settings.json")).unwrap(), "{\"mine\":1}");
+}

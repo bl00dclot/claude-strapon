@@ -141,6 +141,11 @@ fn run() -> i32 {
         for l in &reports[i].plan {
             println!("    {l}");
         }
+        if comps[i].name == "accounts" {
+            for l in comp::accounts::add_plan(&ctx, opts.add_accounts) {
+                println!("    {l}");
+            }
+        }
     }
     let sessions = ctx::out(std::process::Command::new("pgrep").args(["-x", "claude"])).map_or(0, |s| s.lines().count());
     if sessions > 0 && ["caveman", "codegraph", "accounts"].iter().any(|n| names.contains(n)) {

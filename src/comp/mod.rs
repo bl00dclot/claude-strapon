@@ -4,6 +4,7 @@
 
 use crate::ctx::Ctx;
 
+pub mod accounts;
 mod agents_skills;
 mod claude_code;
 mod effort_router;
@@ -60,6 +61,7 @@ pub fn all() -> Vec<Component> {
     vec![
         node22::C,
         claude_code::C,
+        accounts::C,
         effort_router::C,
         statusline::C,
         agents_skills::C,
